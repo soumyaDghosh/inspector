@@ -1,6 +1,6 @@
 on:
   push:
-    branches: [ "none" ]
+    branches: [ "master" ]
   pull_request:
   workflow_dispatch:
 name: Snap
@@ -12,21 +12,54 @@ jobs:
     name: "Test if the Snap can be built from the latest commit in the branch"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Git repository
-        uses: actions/checkout@v3
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: snapcraft-build
+      # - name: Checkout Git repository
+      #   uses: actions/checkout@v4
+
+      # - name: Build Snap
+      #   uses: snapcore/action-build@v1
+      #   id: snapcraft-build
+      #   with:
+      #     snapcraft-args: "-v"
+      #     path: "build-aux"
+
+      # - uses: actions/upload-artifact@v4
+      #   with:
+      #     name: inspector-amd64-snap
+      #     path: ${{ steps.snapcraft-build.outputs.snap }}
+
+      # - name: Upload and release Inspector snap with every changes
+      #   uses: snapcore/action-publish@v1
+      #   env:
+      #     SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+      #   with:
+      #     snap: ${{ steps.snapcraft-build.outputs.snap }}
+      #     release: ${{'edge'}}
+
+      - name: Setup ghvmctl
+        uses: snapcrafters/ci/setup-ghvmctl@main
+
+      - name: Prepare VM
+        shell: bash
+        run: |
+          ghvmctl prepare
+          ghvmctl snap-install inspector --channel edge
+          ghvmctl snap-run inspector.inspector
+
+      - name: Gather screenshots
+        shell: bash
+        run: |
+          ghvmctl screenshot-full
+          ghvmctl screenshot-window
+
+      - name: Output application logs
+        shell: bash
+        run: |
+          ghvmctl exec "cat /home/ubuntu/inspector.inspector.log"
+
+      - name: Upload Screenshots
+        uses: actions/upload-artifact@v4
         with:
-          snapcraft-args: "-v"
-      - uses: actions/upload-artifact@v3
-        with:
-          name: inspector-amd64-snap
-          path: ${{ steps.snapcraft-build.outputs.snap }}
-      - name: Upload and release Inspector snap with every changes
-        uses: snapcore/action-publish@v1
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
-        with:
-          snap: ${{ steps.snapcraft-build.outputs.snap }}
-          release: ${{'edge'}}
+          name: screenshots
+          path: |
+             /home/runner/ghvmctl-screenshots/screenshot-screen.png
+             /home/runner/ghvmctl-screenshots/screenshot-window.png

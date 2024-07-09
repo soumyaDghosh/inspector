@@ -11,7 +11,6 @@ parts:
   inspector:
     plugin: meson
     source: https://github.com/Nokse22/inspector.git
-    source-tag: 'v0.2.0'
     source-depth: 1
     parse-info: [ usr/share/appdata/io.github.nokse22.inspector.appdata.xml ]
     build-snaps:
